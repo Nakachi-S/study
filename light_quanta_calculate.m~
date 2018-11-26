@@ -2,8 +2,13 @@
 % 光子数を計算するスクリプト
 % とりあえず、葉モデルは更新せず固定させ、光子数を計算する関数を実装する。
 
+%葉のモデルとして適当な平面を生成
+figure;
+[xx,yy]=ndgrid(-0.5:0.5,-0.5:0.5);
+zz = zeros(size(xx));
+surf(xx, yy, zz);
+hold on;
 
-%葉モデルの面の頂点座標を決定
 
 %太陽の動きを15分おきに更新。
 
@@ -17,31 +22,34 @@ zlabel("z (height)")
 grid on;
 hold on;
 
+%到達
 
 %球の乱数を生成
 tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 1000;  %１日に放射する総光子数
-for n = 10:5:50
-    n_q = time_quanta(n);   %n_qに時間別に発生させる光子数を代入
-    rng(0,'twister')
+all_quanta = 100;  %１日に放射する総光子数
+for n = 1:61
+    n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
+    rng(n,'twister')    %ここ注意
     rvals = 2*rand(n_q,1)-1;
     elevation = asin(rvals);
-
     azimuth = 2*pi*rand(n_q,1);
     radii = 1*(rand(n_q,1).^(1/3));
     [x_rand,y_rand,z_rand] = sph2cart(azimuth,elevation,radii);
+    
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
+    
+    %ここに追加するぞ
+    %それぞれの発生させた光源が、葉に達しているかチェック
+    if shading_check(x_rand, y_rand, z_rand, sun_) == 1
+        
+    end
     
     %乱数で生成した点の直線の描画
     direction_vector = [sun_x(n), sun_y(n), sun_z(n)];  %方向ベクトルの保持
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
     
 end
-
-%葉のモデルとして適当な平面を生成
-figure;
-[xx,yy]=ndgrid(1:10,1:10);
 
 
 
@@ -61,7 +69,7 @@ function line_rand(x_rand, y_rand, z_rand, direction_vector)
 end
 
 %時間別に発生させる光子数を計算する関数
-function n_q = time_quanta(n, solor)
+function n_q = time_quanta(n, solorradiation, all_quanta)
     switch n
         case {4, 5, 6, 7}
             tmp = solorradiation.Solor_radiation(1);
@@ -96,9 +104,17 @@ function n_q = time_quanta(n, solor)
         otherwise
             tmp = 0;
     end
-    n_q = all_quanta * (tmp / sum(solorradiation.Solor_radiation));
+    n_q = round(all_quanta * (tmp / sum(solorradiation.Solor_radiation)));
+    
 end
 
+function shading = shading_check()
+    shading = 1;
+    
+end
+
+
+%%%%%%%%%%%%%%%%    以下ボツ　　　%%%%%%%%%%%%%%%%%%
 %模擬放射光源の作成（試作段階）
 %ネットから。没かな？
 %{
