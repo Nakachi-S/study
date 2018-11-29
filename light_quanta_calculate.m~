@@ -22,14 +22,15 @@ zlabel("z (height)")
 grid on;
 hold on;
 
-%到達
+%到達した光子数の数。この数が最大化するような推定を行う。
+reached_q = 0;
 
 %球の乱数を生成
 tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 100;  %１日に放射する総光子数
+all_quanta = 300;  %１日に放射する総光子数
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
-    rng(n,'twister')    %ここ注意
+    rng(n,'twister')    %ここ注意。nを固定するとだめ。
     rvals = 2*rand(n_q,1)-1;
     elevation = asin(rvals);
     azimuth = 2*pi*rand(n_q,1);
@@ -39,9 +40,12 @@ for n = 1:61
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
     
-    %ここに追加するぞ
-    %それぞれの発生させた光源が、葉に達しているかチェック
-    if shading_check(x_rand, y_rand, z_rand, sun_) == 1
+    %それぞれの光子数の面に対する内外判定
+    for m = 1:length(x_rand)
+        %今は一つだが、ここにfor文で面の数だけループさせる
+        if check_segment2surface() == 1
+            reached_q = reached_q + 1;  %葉に光子が達せば、インクリメント
+        end
         
     end
     
@@ -57,7 +61,8 @@ end
 
 %球内で生成した点を通る直線の描画
 function line_rand(x_rand, y_rand, z_rand, direction_vector)
-    t = 0:1;
+    
+    t = 0:1;    %媒介変数
     
     for n = 1:length(x_rand)
         %if z_rand(n) + t*direction_vector(3) >= 0
@@ -108,7 +113,7 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
     
 end
 
-function shading = shading_check()
+function shading = check_segment2surface()
     shading = 1;
     
 end

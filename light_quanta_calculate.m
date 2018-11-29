@@ -30,7 +30,7 @@ tmp_rand = 50;  %—”‚ð¶¬‚·‚é”BŒãXA“úŽË—Ê‚É”ä—á‚µ‚ÄÝ’è‚·‚é‚Ì‚ÅAˆêŽž“I‚È‚
 all_quanta = 300;  %‚P“ú‚É•úŽË‚·‚é‘ŒõŽq”
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_q‚ÉŽžŠÔ•Ê‚É”­¶‚³‚¹‚éŒõŽq”‚ð‘ã“ü
-    rng(n,'twister')    %‚±‚±’ˆÓ
+    rng(n,'twister')    %‚±‚±’ˆÓBn‚ðŒÅ’è‚·‚é‚Æ‚¾‚ßB
     rvals = 2*rand(n_q,1)-1;
     elevation = asin(rvals);
     azimuth = 2*pi*rand(n_q,1);
@@ -40,13 +40,14 @@ for n = 1:61
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
     
-    %‚±‚±‚É’Ç‰Á‚·‚é‚¼
-    %‚»‚ê‚¼‚ê‚Ì”­¶‚³‚¹‚½ŒõŒ¹‚ªA—t‚É’B‚µ‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
-    %{
-    if shading_check(x_rand, y_rand, z_rand) == 1
-        reached_q = reached_q + 1;  %—t‚ÉŒõŽq‚ª’B‚¹‚ÎAƒCƒ“ƒNƒŠƒƒ“ƒg
+    %‚»‚ê‚¼‚ê‚ÌŒõŽq”‚Ì–Ê‚É‘Î‚·‚é“àŠO”»’è
+    for m = 1:length(x_rand)
+        %¡‚Íˆê‚Â‚¾‚ªA‚±‚±‚Éfor•¶‚Å–Ê‚Ì”‚¾‚¯ƒ‹[ƒv‚³‚¹‚é
+        if check_segment2surface() == 1
+            reached_q = reached_q + 1;  %—t‚ÉŒõŽq‚ª’B‚¹‚ÎAƒCƒ“ƒNƒŠƒƒ“ƒg
+        end
+        
     end
-    %}
     
     %—”‚Å¶¬‚µ‚½“_‚Ì’¼ü‚Ì•`‰æ
     direction_vector = [sun_x(n), sun_y(n), sun_z(n)];  %•ûŒüƒxƒNƒgƒ‹‚Ì•ÛŽ
@@ -60,9 +61,11 @@ end
 
 %‹…“à‚Å¶¬‚µ‚½“_‚ð’Ê‚é’¼ü‚Ì•`‰æ
 function line_rand(x_rand, y_rand, z_rand, direction_vector)
-    t = 0:1;
+    %t = 0:1;   
     
     for n = 1:length(x_rand)
+        t_s = -(z_rand(n) / direction_vector(3));   %z=0‚ÌŽž‚Ì”}‰î•Ï”
+        t = [t_s,1];    %”}‰î•Ï”‚ÌÝ’è
         %if z_rand(n) + t*direction_vector(3) >= 0
             plot3(x_rand(n) + t*direction_vector(1), y_rand(n) + t*direction_vector(2),...
                 z_rand(n) + t*direction_vector(3));
@@ -111,7 +114,7 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
     
 end
 
-function shading = shading_check()
+function shading = check_segment2surface()
     shading = 1;
     
 end
