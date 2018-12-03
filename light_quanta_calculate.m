@@ -4,16 +4,22 @@
 
 %葉のモデルとして適当な平面を生成
 figure;
-[xx,yy]=ndgrid(-0.5:0.5,-0.5:0.5);
-zz = zeros(size(xx));
-surf(xx, yy, zz);
+%[surf1_x,surf1_y]=ndgrid(-0.5:0.5,-0.5:0.5);
+surf1_x = [1, 1; 2, 2];
+surf1_y = [3, 5; 3, 5];
+surf1_z = [0.5, 0.5; 0, 0];
+surf(surf1_x, surf1_y, surf1_z);
+surf1 = [surf1_x, surf1_y, surf1_z];
+surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
+xlabel("x")
+ylabel("y")
+zlabel("z")
 hold on;
-
 
 %太陽の動きを15分おきに更新。
 
 %太陽の中心座標をプロット（2018/7/1 北海道・札幌）
-figure;
+%figure;
 [sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
 plot3(sun_x, sun_y, sun_z, "o")
 xlabel("x (east or west)")
@@ -22,12 +28,14 @@ zlabel("z (height)")
 grid on;
 hold on;
 
+p_all = [];
+
 %到達した光子数の数。この数が最大化するような推定を行う。
 reached_q = 0;
 
 %球の乱数を生成
 tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 300;  %１日に放射する総光子数
+all_quanta = 200;  %１日に放射する総光子数
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
     rng(n,'twister')    %ここ注意。nを固定するとだめ。
@@ -40,22 +48,39 @@ for n = 1:61
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
     
+    direction_vector = [sun_x(n), sun_y(n), sun_z(n)];  %方向ベクトルの保持
     %それぞれの光子数の面に対する内外判定
     for m = 1:length(x_rand)
         %今は一つだが、ここにfor文で面の数だけループさせる
-        if check_segment2surface() == 1
+        %{
+        if check_segment2surface(x_rand(m), y_rand(m), z_rand(m), ...
+                direction_vector, surf1) == 1
             reached_q = reached_q + 1;  %葉に光子が達せば、インクリメント
+        end
+        %}
+        [isOK, p] = check_segment2surface(x_rand(m), y_rand(m), z_rand(m), ...
+                        direction_vector, surf1);
+                    
+        if isOK == 1
+            reached_q = reached_q + 1;
+            plot3(p(1), p(2), p(3), "o");
+            hold on
+            p_all = [p_all; p];
         end
         
     end
     
     %乱数で生成した点の直線の描画
-    direction_vector = [sun_x(n), sun_y(n), sun_z(n)];  %方向ベクトルの保持
+    
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
     
 end
-
-
+figure
+for n = 1:length(p_all)
+    plot3(p_all(n ,1), p_all(n, 2), p_all(n, 3), "o");
+    hold on
+    
+end
 
 %%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
 
@@ -66,11 +91,12 @@ function line_rand(x_rand, y_rand, z_rand, direction_vector)
     for n = 1:length(x_rand)
         t_s = -(z_rand(n) / direction_vector(3));   %z=0の時の媒介変数
         t = [t_s,1];    %媒介変数の設定
-        %if z_rand(n) + t*direction_vector(3) >= 0
+        %ここのif文は描画のため。のちのち外す
+        if abs(x_rand(n) + t(1)*direction_vector(1)) < 1.5
             plot3(x_rand(n) + t*direction_vector(1), y_rand(n) + t*direction_vector(2),...
                 z_rand(n) + t*direction_vector(3));
             hold on
-        %end
+        end
     end
 end
 
@@ -113,10 +139,68 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
     n_q = round(all_quanta * (tmp / sum(solorradiation.Solor_radiation)));
     
 end
+%交差判定のプログラム。Tomas Moolarのアルゴリズム
+function [isOK, p] = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf)
+origin = [x_rand+direction_vector(1), y_rand+direction_vector(2), ...
+    z_rand+direction_vector(3)];
+edge1 = surf(1, :) - surf(2, :);
+edge2 = surf(4, :) - surf(2, :);
 
-function shading = check_segment2surface()
-    shading = 1;
+denominator = [edge1; edge2; -direction_vector];
+denominator = det(denominator);
+
+
+%u, v, tを求める処理を。uはedge1の任意の点。vはedge2の任意の点。tはoriginからpまでのスカラー値。
+
+if denominator > 0
+    %xyz_rand = [x_rand, y_rand, z_rand];
+    u = [origin - surf(1, :); edge2; -direction_vector];
+    u = det(u) / denominator;
     
+    if u >= 0 && u <= 1
+        v = [edge1; origin - surf(1, :); -direction_vector];
+        v = det(v) / denominator;
+        
+        if v >= 0 && u + v <= 1
+            t = [edge1; edge2; origin - surf(1, :)];
+            t = det(t) / denominator;
+            isOK = 1;
+            p = origin + direction_vector*t;
+            return
+            
+        end
+    end
+    
+end    
+
+edge1 = surf(4, :) - surf(3, :);
+edge2 = surf(1, :) - surf(3, :);
+
+denominator = [edge1; edge2; -direction_vector];
+denominator = det(denominator);
+
+if denominator > 0
+    %xyz_rand = [x_rand, y_rand, z_rand];
+    u = [origin - surf(1, :); edge2; -direction_vector];
+    u = det(u) / denominator;
+    
+    if u >= 0 && u <= 1
+        v = [edge1; origin - surf(1, :); -direction_vector];
+        v = det(v) / denominator;
+        
+        if v >= 0 && u + v <= 1
+            t = [edge1; edge2; origin - surf(1, :)];
+            t = det(t) / denominator;
+            isOK = 1;
+            p = origin + direction_vector*t;
+            return
+            
+        end
+    end
+    
+end    
+isOK = 0;
+p = 0;
 end
 
 
