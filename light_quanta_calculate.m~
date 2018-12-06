@@ -4,11 +4,12 @@
 
 %葉のモデルとして適当な平面を生成
 figure;
-%[surf1_x,surf1_y]=ndgrid(-0.5:0.5,-0.5:0.5);
 surf1_x = [1, 1; 2, 2];
 surf1_y = [3, 5; 3, 5];
 surf1_z = [0.5, 0.5; 0, 0];
-surf(surf1_x, surf1_y, surf1_z);
+surf(surf1_x, surf1_y, surf1_z)
+hold on;
+surf([1,2; 1, 2], []
 surf1 = [surf1_x, surf1_y, surf1_z];
 surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
 xlabel("x")
@@ -27,6 +28,7 @@ ylabel("y (north or south)")
 zlabel("z (height)")
 grid on;
 hold on;
+
 
 %到達した光子数の数。この数が最大化するような推定を行う。
 reached_q = 0;
@@ -50,18 +52,20 @@ for n = 1:61
     %それぞれの光子数の面に対する内外判定
     for m = 1:length(x_rand)
         %今は一つだが、ここにfor文で面の数だけループさせる
-        
+        %{
         if check_segment2surface(x_rand(m), y_rand(m), z_rand(m), ...
                 direction_vector, surf1) == 1
             reached_q = reached_q + 1;  %葉に光子が達せば、インクリメント
         end
-        
+        %}
         [isOK, p] = check_segment2surface(x_rand(m), y_rand(m), z_rand(m), ...
                         direction_vector, surf1);
+                    
         if isOK == 1
             reached_q = reached_q + 1;
-            plot3(p);
+            plot3(p(1), p(2), p(3), "o");
             hold on
+            
         end
         
     end
@@ -71,7 +75,6 @@ for n = 1:61
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
     
 end
-
 
 
 %%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
@@ -132,7 +135,7 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
     
 end
 %交差判定のプログラム。Tomas Moolarのアルゴリズム
-function isOK = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf)
+function [isOK, p] = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf)
 origin = [x_rand+direction_vector(1), y_rand+direction_vector(2), ...
     z_rand+direction_vector(3)];
 edge1 = surf(1, :) - surf(2, :);
@@ -157,6 +160,7 @@ if denominator > 0
             t = [edge1; edge2; origin - surf(1, :)];
             t = det(t) / denominator;
             isOK = 1;
+            p = origin + direction_vector*t;
             return
             
         end
@@ -183,6 +187,7 @@ if denominator > 0
             t = [edge1; edge2; origin - surf(1, :)];
             t = det(t) / denominator;
             isOK = 1;
+            p = origin + direction_vector*t;
             return
             
         end
@@ -190,6 +195,7 @@ if denominator > 0
     
 end    
 isOK = 0;
+p = 0;
 end
 
 

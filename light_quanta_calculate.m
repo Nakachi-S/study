@@ -4,11 +4,11 @@
 
 %葉のモデルとして適当な平面を生成
 figure;
-%[surf1_x,surf1_y]=ndgrid(-0.5:0.5,-0.5:0.5);
 surf1_x = [1, 1; 2, 2];
 surf1_y = [3, 5; 3, 5];
 surf1_z = [0.5, 0.5; 0, 0];
-surf(surf1_x, surf1_y, surf1_z);
+surf(surf1_x, surf1_y, surf1_z)
+
 surf1 = [surf1_x, surf1_y, surf1_z];
 surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
 xlabel("x")
@@ -28,7 +28,6 @@ zlabel("z (height)")
 grid on;
 hold on;
 
-p_all = [];
 
 %到達した光子数の数。この数が最大化するような推定を行う。
 reached_q = 0;
@@ -44,7 +43,7 @@ for n = 1:61
     azimuth = 2*pi*rand(n_q,1);
     radii = 1*(rand(n_q,1).^(1/3));
     [x_rand,y_rand,z_rand] = sph2cart(azimuth,elevation,radii);
-    
+    %乱数の描画
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
     
@@ -65,7 +64,7 @@ for n = 1:61
             reached_q = reached_q + 1;
             plot3(p(1), p(2), p(3), "o");
             hold on
-            p_all = [p_all; p];
+            
         end
         
     end
@@ -75,12 +74,7 @@ for n = 1:61
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
     
 end
-figure
-for n = 1:length(p_all)
-    plot3(p_all(n ,1), p_all(n, 2), p_all(n, 3), "o");
-    hold on
-    
-end
+
 
 %%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
 
@@ -149,20 +143,19 @@ edge2 = surf(4, :) - surf(2, :);
 denominator = [edge1; edge2; -direction_vector];
 denominator = det(denominator);
 
-
 %u, v, tを求める処理を。uはedge1の任意の点。vはedge2の任意の点。tはoriginからpまでのスカラー値。
 
 if denominator > 0
     %xyz_rand = [x_rand, y_rand, z_rand];
-    u = [origin - surf(1, :); edge2; -direction_vector];
+    u = [origin - surf(2, :); edge2; -direction_vector];
     u = det(u) / denominator;
     
     if u >= 0 && u <= 1
-        v = [edge1; origin - surf(1, :); -direction_vector];
+        v = [edge1; origin - surf(2, :); -direction_vector];
         v = det(v) / denominator;
         
         if v >= 0 && u + v <= 1
-            t = [edge1; edge2; origin - surf(1, :)];
+            t = [edge1; edge2; origin - surf(2, :)];
             t = det(t) / denominator;
             isOK = 1;
             p = origin + direction_vector*t;
@@ -181,15 +174,15 @@ denominator = det(denominator);
 
 if denominator > 0
     %xyz_rand = [x_rand, y_rand, z_rand];
-    u = [origin - surf(1, :); edge2; -direction_vector];
+    u = [origin - surf(3, :); edge2; -direction_vector];
     u = det(u) / denominator;
     
     if u >= 0 && u <= 1
-        v = [edge1; origin - surf(1, :); -direction_vector];
+        v = [edge1; origin - surf(3, :); -direction_vector];
         v = det(v) / denominator;
         
         if v >= 0 && u + v <= 1
-            t = [edge1; edge2; origin - surf(1, :)];
+            t = [edge1; edge2; origin - surf(3, :)];
             t = det(t) / denominator;
             isOK = 1;
             p = origin + direction_vector*t;
