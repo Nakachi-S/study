@@ -4,8 +4,8 @@
 
 %葉のモデルとして適当な平面を生成
 figure;
-surf1_x = [1, 1; 2, 2];
-surf1_y = [3, 5; 3, 5];
+surf1_x = [0, 0; 2, 2];
+surf1_y = [0, 5; 0, 5];
 surf1_z = [0.5, 0.5; 0, 0];
 surf(surf1_x, surf1_y, surf1_z)
 
@@ -34,7 +34,7 @@ reached_q = 0;
 
 %球の乱数を生成
 tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 200;  %１日に放射する総光子数
+all_quanta = 500;  %１日に放射する総光子数
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
     rng(n,'twister')    %ここ注意。nを固定するとだめ。
@@ -72,9 +72,10 @@ for n = 1:61
     %乱数で生成した点の直線の描画
     
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
-    
 end
-
+dim = [0.2 0.5 0.3 0.3];
+str = {'交差数=', reached_q};
+annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 %%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
 
