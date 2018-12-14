@@ -13,8 +13,8 @@ function [Lsystem,N] = parseLsys(system,M)
 %   - Lsystem:      The choosen L-system
 %   - N:            The choosen number of iteration
 %
-    optLsys = {'derive_tree_v1(suggested iteration: 1..5)',...
-                'notavailable', 'notavailable'};
+    optLsys = {'derive_string_v1(suggested iteration: 1..5)',...
+                'derive_string_v2(notavailable)'};
 
     % print L-system options
     while true
@@ -22,7 +22,7 @@ function [Lsystem,N] = parseLsys(system,M)
         whichSys = input('Please enter a valid L-system: ', 's');
         whichSys = str2double(whichSys);
         if (whichSys==1)
-            Lsystem = 'derive_tree_v1';
+            Lsystem = 'derive_string_v1';
             break;
         elseif (whichSys==5)
             Lsystem = system;

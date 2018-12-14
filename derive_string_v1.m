@@ -3,7 +3,7 @@ function [LMstring,len] = derive_string_v1(N)
 %   
 %   This function computes the Lindenmayer string (symbols) 
 %   based on some pre-defined rules and N iteration,
-%   in order to display Any character string.
+%   in order to display any character string.
 %   [LMstring,len] = derive_string_v1(N)
 %
 %   INPUT  
@@ -39,7 +39,7 @@ len = 1;
 ratio = 1/3;
 
 for i=1:nReps
-    len = len*ratio;
+    %len = len*ratio;
     
     %one character/cell, with indexes the same as original axiom string
     axiomINcells = cellstr(axiom'); 

@@ -18,7 +18,7 @@ function plotCommands = derive_tree_v1(LindenmayerString,system,len)
 %                               and angle specifications
 %                               [azimuth, elevation, r, opition]
 %                               option: 1=幹、2=枝、3=葉枝、4=描画しない
-v = [0 0 0 0];
+v = [0 0 0];
 stack = 0;
 l = 0;  %枝が何回出てきたか？']'用　ゆくゆくは消す
 %別のL-systemを作った時の場合分け用
@@ -57,7 +57,7 @@ for w=1:length(LindenmayerString)
         if LindenmayerString(w) == 'S'
             v = [v, pi/3 pi/5 2 3];
         elseif LindenmayerString(w) == ']'
-            v = [v, pi/3+pi -pi/5 2 0];
+            v = [v, -pi/3 -pi/5 2 0];
             stack = stack - 1;
         end
     
@@ -86,7 +86,7 @@ for w=1:length(LindenmayerString)
     end
 end
 ratio = len;
-indx = [3:4:length(v)];     %3つ目のr,つまり長さにレートをかけて調整
+indx = [3:4:length(v)];     %3つ目のr,つまり長さにれ
 v(indx) = v(indx) * ratio;
 plotCommands = v;
 %disp(plotCommands);

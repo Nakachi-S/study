@@ -56,18 +56,14 @@ while true
                 fprintf(2, 'generated string:%s\n', LindenmayerString);
                 %ここに生成された文字列を使った3d spaceに変換可能な
                 %何かしらの関数処理を。
-                if system == 'derive_string_v1'
-                    plotCommand = derive_tree_v1(LindenmayerString, system, len);
+                if system == derive_string_v1
+                   plotcommand = derive_tree_v1(LindenmayerString);
                 end
                 %turtleCommands = turtleGraph(LindenmayerString,system,len);
                 fprintf('done!\n');
                 fprintf('文字列からプロットを生成しますか？\n');
                 tmp = input('Please input yes or no(y/n): ', 's');
-                if tmp == 'y'
-                    turtlePlot(plotCommand, system, N);
-                else
-                    fprintf('プロットしません\n');
-                end
+                %ここにプロットの処理をif使えよ?
             end
         % option 2 - Generate plots
         elseif dcmd == optPlots
