@@ -28,13 +28,13 @@ while i<=length(v)
     newY = y + nextY;
     newZ = z + nextZ;
     %line([x(1), newX(1)],[x(2), newX(2)],'color',[0 0 1], 'linewidth',2);
-    if v(i) == 0
+    if v(i) == 0    %‚È‚ñ‚Å‚à–³‚¢‚Æ‚«
         %plot3([x, newX],[y, newY],[z, newZ], 'y');
-    elseif v(i) == 1
+    elseif v(i) == 1    %Š²‚Ì‚Æ‚«
         plot3([x, newX],[y, newY],[z, newZ], 'r', 'Linewidth', 5);
-    elseif v(i) == 2
+    elseif v(i) == 2    %Ž}‚Ì‚Æ‚«
         plot3([x, newX],[y, newY],[z, newZ], 'g', 'Linewidth', 3);
-    elseif v(i) == 3
+    elseif v(i) == 3    %Ž}—t‚Ì‚Æ‚«
         plot3([x, newX],[y, newY],[z, newZ], 'b');
     end
     hold on
