@@ -1,49 +1,38 @@
-%light_quanta_caluculate.m
-% 光子数を計算するスクリプト
-% とりあえず、葉モデルは更新せず固定させ、光子数を計算する関数を実装する。
-
-%葉のモデルとして適当な平面を生成
-figure;
-surf1_x = [0, 0; 2, 2];
-surf1_y = [0, 5; 0, 5];
-surf1_z = [0.5, 0.5; 0, 0];
-surf(surf1_x, surf1_y, surf1_z)
-
-surf1 = [surf1_x, surf1_y, surf1_z];
-surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
-xlabel("x")
-ylabel("y")
-zlabel("z")
-hold on;
-
-%太陽の動きを15分おきに更新。
-
+function reached_q = light_quanta_calu(surf_info)
+%   光子数を計算する関数
+%   引数は葉の面の情報
+%   出力は光子数の数
+clear;
+load('workspace.mat');
 %太陽の中心座標をプロット（2018/7/1 北海道・札幌）
-%figure;
+
+%surf1 = [surf1_x, surf1_y, surf1_z];
+%surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
+
+figure(2);
 [sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
 plot3(sun_x, sun_y, sun_z, "o")
-xlabel("x (east or west)")
-ylabel("y (north or south)")
-zlabel("z (height)")
-grid on;
 hold on;
+grid on;
 
-
-%到達した光子数の数。この数が最大化するような推定を行う。
+%到達した光子数の数。この数が最大化するような推定を行う。(出力)
 reached_q = 0;
 
 %球の乱数を生成
-tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
+%tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
 all_quanta = 100;  %１日に放射する総光子数
+
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
+    %tmp = tmp+n_q;     %実際の光子数の表示
+    %disp(tmp);
     rng(n,'twister')    %ここ注意。nを固定するとだめ。
     rvals = 2*rand(n_q,1)-1;
     elevation = asin(rvals);
     azimuth = 2*pi*rand(n_q,1);
     radii = 1*(rand(n_q,1).^(1/3));
     [x_rand,y_rand,z_rand] = sph2cart(azimuth,elevation,radii);
-    %乱数の描画
+    %乱数の描画  原点周辺の乱数+方向ベクトルにより描画
     plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
     hold on
     
@@ -58,7 +47,7 @@ for n = 1:61
         end
         %}
         [isOK, p] = check_segment2surface(x_rand(m), y_rand(m), z_rand(m), ...
-                        direction_vector, surf1);
+                        direction_vector, surf_info);
                     
         if isOK == 1
             reached_q = reached_q + 1;
@@ -69,17 +58,17 @@ for n = 1:61
         
     end
     
-    %乱数で生成した点の直線の描画
-    
+    %乱数で生成した点を通る直線の描画
     line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
 end
 dim = [0.2 0.5 0.3 0.3];
 str = {'交差数=', reached_q};
 annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
-%%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
+end
 
-%球内で生成した点を通る直線の描画
+%   球内で生成した点を通る直線の描画
+%   引数の_randは原点周辺の乱数群。direction_vectorは方向ベクトル(太陽の位置)。
 function line_rand(x_rand, y_rand, z_rand, direction_vector)
     %t = 0:1;   
     
@@ -131,109 +120,74 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
         otherwise
             tmp = 0;
     end
-    n_q = round(all_quanta * (tmp / sum(solorradiation.Solor_radiation)));
+    %最後の/4は4個セットで一つの値だから。これがないと、all_quntaの辻褄が合わない。
+    n_q = round(all_quanta * (tmp / sum(solorradiation.Solor_radiation)) / 4);
     
 end
+
 %交差判定のプログラム。Tomas Moolarのアルゴリズム
 function [isOK, p] = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf)
 origin = [x_rand+direction_vector(1), y_rand+direction_vector(2), ...
     z_rand+direction_vector(3)];
-edge1 = surf(1, :) - surf(2, :);
-edge2 = surf(4, :) - surf(2, :);
 
-denominator = [edge1; edge2; -direction_vector];
-denominator = det(denominator);
+for i=1:4:length(surf_info)
 
-%u, v, tを求める処理を。uはedge1の任意の点。vはedge2の任意の点。tはoriginからpまでのスカラー値。
+    edge1 = surf(1, :) - surf(2, :);
+    edge2 = surf(4, :) - surf(2, :);
 
-if denominator > 0
-    %xyz_rand = [x_rand, y_rand, z_rand];
-    u = [origin - surf(2, :); edge2; -direction_vector];
-    u = det(u) / denominator;
-    
-    if u >= 0 && u <= 1
-        v = [edge1; origin - surf(2, :); -direction_vector];
-        v = det(v) / denominator;
-        
-        if v >= 0 && u + v <= 1
-            t = [edge1; edge2; origin - surf(2, :)];
-            t = det(t) / denominator;
-            isOK = 1;
-            p = origin + direction_vector*t;
-            return
-            
+    denominator = [edge1; edge2; -direction_vector];
+    denominator = det(denominator);
+
+    %u, v, tを求める処理を。uはedge1の任意の点。vはedge2の任意の点。tはoriginからpまでのスカラー値。
+
+    if denominator > 0
+        %xyz_rand = [x_rand, y_rand, z_rand];
+        u = [origin - surf(2, :); edge2; -direction_vector];
+        u = det(u) / denominator;
+
+        if u >= 0 && u <= 1
+            v = [edge1; origin - surf(2, :); -direction_vector];
+            v = det(v) / denominator;
+
+            if v >= 0 && u + v <= 1
+                t = [edge1; edge2; origin - surf(2, :)];
+                t = det(t) / denominator;
+                isOK = 1;
+                p = origin + direction_vector*t;
+                return
+
+            end
         end
-    end
-    
-end    
 
-edge1 = surf(4, :) - surf(3, :);
-edge2 = surf(1, :) - surf(3, :);
+    end    
 
-denominator = [edge1; edge2; -direction_vector];
-denominator = det(denominator);
+    edge1 = surf(4, :) - surf(3, :);
+    edge2 = surf(1, :) - surf(3, :);
 
-if denominator > 0
-    %xyz_rand = [x_rand, y_rand, z_rand];
-    u = [origin - surf(3, :); edge2; -direction_vector];
-    u = det(u) / denominator;
-    
-    if u >= 0 && u <= 1
-        v = [edge1; origin - surf(3, :); -direction_vector];
-        v = det(v) / denominator;
-        
-        if v >= 0 && u + v <= 1
-            t = [edge1; edge2; origin - surf(3, :)];
-            t = det(t) / denominator;
-            isOK = 1;
-            p = origin + direction_vector*t;
-            return
-            
+    denominator = [edge1; edge2; -direction_vector];
+    denominator = det(denominator);
+
+    if denominator > 0
+        %xyz_rand = [x_rand, y_rand, z_rand];
+        u = [origin - surf(3, :); edge2; -direction_vector];
+        u = det(u) / denominator;
+
+        if u >= 0 && u <= 1
+            v = [edge1; origin - surf(3, :); -direction_vector];
+            v = det(v) / denominator;
+
+            if v >= 0 && u + v <= 1
+                t = [edge1; edge2; origin - surf(3, :)];
+                t = det(t) / denominator;
+                isOK = 1;
+                p = origin + direction_vector*t;
+                return
+
+            end
         end
-    end
-    
-end    
-isOK = 0;
-p = 0;
+
+    end    
+    isOK = 0;
+    p = 0;
 end
-
-
-%%%%%%%%%%%%%%%%    以下ボツ　　　%%%%%%%%%%%%%%%%%%
-%模擬放射光源の作成（試作段階）
-%ネットから。没かな？
-%{
-figure
-for n = 1:63
-    point = [x(n), y(n), z(n)];
-    normal = point; 
-    %# a plane is a*x+b*y+c*z+d=0
-    %# [a,b,c] is the normal. Thus, we have to calculate
-    %# d and we're set
-    d = -point*normal'; %'# dot product for less typing
-
-    %# create x,y
-    [xx,yy]=ndgrid(1:10,1:10);
-
-    %# calculate corresponding z
-    zz = (-normal(1)*xx - normal(2)*yy - d)/normal(3);
-    
-    surf(xx,yy,zz)
-    
-    grid on
-    hold on
 end
-%}
-
-%模擬放射光源の作成（試作段階）
-%meshgridを用いた方法。没かな？
-%{
-for n = 10:40
-    [x_range,y_range]=meshgrid(x(n)-1:0.1:x(n)+1,y(n)-1:0.1:y(n)+1);
-    z_range = ((x(n).^2 + y(n).^2 + z(n).^2 - x(n)*x_range - y(n)*y_range) / z(n));
-    
-    surf(x_range, y_range, z_range);
-    hold on;
-    
-end
-plot3(0, 0, 0, "o");
-%}
