@@ -26,10 +26,12 @@ Tree.c = [];          %z軸の角度のパラメータ（+）
 Tree.d = [];          %   、、           （-）
 Tree.param = [];      %全てのパラメータ　結局、上のabcdは使わずにこっち使う。
 
+all_quanta = 1000;      %総光子数（１日に放射する光子）
+
 Tree = ini(Tree, M);        %文字列とパラメータの初期化 第二引数は何回置換するか
 Tree = add_info(Tree);      %描画や誘導関数計算のために、パラメータに対してのプロット情報や葉の情報
 %treePlot(Tree);
-Tree = mpm(Tree);
+Tree = mpm(Tree, all_quanta);
 %ここに3dスペースへ描画の処理を
 
 
@@ -40,16 +42,19 @@ Tree = mpm(Tree);
 
 %   Metropolis Procedural Modeling
 %   入力は初期化されたTree、出力は最適化されたTree
-function Tree = mpm(Tree)
-N = 20;     %最適化回数
+function Tree = mpm(Tree, all_quanta)
+N = 100;     %最適化回数
+count = 0;  %reached_quantaのためのインデックス
 for i = 1:N
     tmp = diffusion_or_jump;
+    %all_quanta = [];
     switch tmp
         case 'diffusion'
             t = random_terminal(Tree);  %Treeの中の文字列の終端記号をランダムに
+            
             %disp("選ばれたインデックス番号とその文字:" + t + "と" + Tree.str(t));
             param = resample_diffusion(Tree, t);  %選ばれた終端記号インデックスに対して再サンプリング
-            accept_pro = likehood_diffusion(Tree, param, t);   %採択確率、尤度関数
+            [accept_pro, now_quanta, next_quanta] = likehood_diffusion(Tree, param, t, all_quanta);   %採択確率、尤度関数
         case 'jump'
             copy_tree = Tree;
             %Treeの非終端記号をランダムに選び出す(v = [str_logのインデックス, 文字のインデックス])
@@ -64,6 +69,8 @@ for i = 1:N
             case 'diffusion'
                 %パラメータの更新
                 Tree.param(t) = param;
+                count = count+1;
+                reached_quanta(count) = next_quanta;
             case 'jump'
                 Tree.str = copy_tree.str;
                 Tree.param = copy_tree.param;
@@ -72,6 +79,7 @@ for i = 1:N
     Tree = add_info(Tree);  %パラメータを更新したので、プロット情報や面の情報も更新
     treePlot(Tree); 
 end
+save('reached_quanta.mat', 'reached_quanta');
 end
 
 %   difussionかjumpの文字列を返す関数
@@ -93,6 +101,7 @@ end
 function t = random_terminal(Tree)
 %str = Tree.str(length(Tree.str));  %今は1×1だから下のでいいが、Tree.strが増えれば
 str = Tree.str;      %strに対象の文字列をコピー
+rng('shuffle');
 n = randi([1 length(Tree.str)], 1);
 
 while(1)
@@ -118,6 +127,7 @@ end
 
 %   引数t(終端記号のインデックス)に対して、パラメータを際割り当てする関数(diffusion用)
 function param = resample_diffusion(Tree, t)
+rng('shuffle');
 switch Tree.str(t)
     case 'F'
         param = normrnd(Tree.default{1}, Tree.default{2});
@@ -136,24 +146,29 @@ end
 end
 
 %   tとparamに対しての採択確率を返す関数(diffusion用)
-%   尤度関数や！
-function accept_pro = likehood_diffusion(Tree, param, t)
-now_quanta = light_quanta_calu(Tree.surface);   %比較前の状態で光子数の計算
+%   尤度関数
+function [accept_pro, now_quanta, next_quanta] = likehood_diffusion(Tree, param, t, all_quanta)
+sigma = 50;
+
+now_quanta = light_quanta_calu(Tree.surface, all_quanta);   %比較前の状態で光子数の計算
 Tree.param(t) = param;
 Tree = add_info(Tree);
-next_quanta = light_quanta_calu(Tree.surface);  %比較する状態の光子数の計算
+next_quanta = light_quanta_calu(Tree.surface, all_quanta);  %比較する状態の光子数の計算
 
-now_likehood = -(standard_likehood - now_quanta).^2;
-next_likehood = -(standard_likehood - next_quanta).^2;
-
+now_likehood = exp(-(all_quanta - now_quanta)^2 / (2*sigma^2));
+next_likehood = exp(-(all_quanta - next_quanta)^2 / (2*sigma^2));
+%disp(now_likehood)
+%disp(next_likehood)
 accept_tmp = (next_likehood / now_likehood);
-
+disp(accept_tmp);
 if 1 < accept_tmp
     accept_pro = 1;
 else
     accept_pro = accept_tmp;
 end
-disp(accept_pro);
+
+
+%accept_pro = 1;
 end
 
 
@@ -376,6 +391,7 @@ function treePlot(Tree)
 %disp("%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
 figure(1);
 
+
 for i = 2:length(Tree.T)
     
     plot3([Tree.T(i-1, 1), Tree.T(i, 1)],[Tree.T(i-1, 2), Tree.T(i, 2)],...
@@ -399,6 +415,9 @@ end
 xlabel("x");
 ylabel("y");
 zlabel("z");
+%xlim([-1 1.2]);
+%ylim([-1 1.2]);
+%zlim([0 1.2]);
 hold off
 end
 %{

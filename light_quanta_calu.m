@@ -1,26 +1,26 @@
-function reached_q = light_quanta_calu(surf_info)
+function reached_q = light_quanta_calu(surf_info, all_quanta)
 %   光子数を計算する関数
 %   引数は葉の面の情報
 %   出力は光子数の数
-clear;
+
 load('workspace.mat');
 %太陽の中心座標をプロット（2018/7/1 北海道・札幌）
 
 %surf1 = [surf1_x, surf1_y, surf1_z];
 %surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
 
-figure(2);
+%figure(2);
 [sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
-plot3(sun_x, sun_y, sun_z, "o")
-hold on;
-grid on;
+%plot3(sun_x, sun_y, sun_z, "o")
+%hold on;
+%grid on;
 
 %到達した光子数の数。この数が最大化するような推定を行う。(出力)
 reached_q = 0;
 
 %球の乱数を生成
 %tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 100;  %１日に放射する総光子数
+%all_quanta = 500;  %１日に放射する総光子数
 
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
@@ -33,8 +33,8 @@ for n = 1:61
     radii = 1*(rand(n_q,1).^(1/3));
     [x_rand,y_rand,z_rand] = sph2cart(azimuth,elevation,radii);
     %乱数の描画  原点周辺の乱数+方向ベクトルにより描画
-    plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
-    hold on
+    %plot3(x_rand + sun_x(n), y_rand + sun_y(n), z_rand + sun_z(n),'.');
+    %hold on
     
     direction_vector = [sun_x(n), sun_y(n), sun_z(n)];  %方向ベクトルの保持
     %それぞれの光子数の面に対する内外判定
@@ -51,19 +51,19 @@ for n = 1:61
                     
         if isOK == 1
             reached_q = reached_q + 1;
-            plot3(p(1), p(2), p(3), "o");
-            hold on
+            %plot3(p(1), p(2), p(3), "o");
+            %hold on
             
         end
         
     end
     
     %乱数で生成した点を通る直線の描画
-    line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
+    %line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
 end
 dim = [0.2 0.5 0.3 0.3];
-str = {'交差数=', reached_q};
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+%str = {'交差数=', reached_q};
+%annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 end
 
@@ -126,14 +126,14 @@ function n_q = time_quanta(n, solorradiation, all_quanta)
 end
 
 %交差判定のプログラム。Tomas Moolarのアルゴリズム
-function [isOK, p] = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf)
+function [isOK, p] = check_segment2surface(x_rand, y_rand, z_rand, direction_vector, surf_info)
 origin = [x_rand+direction_vector(1), y_rand+direction_vector(2), ...
     z_rand+direction_vector(3)];
 
-for i=1:4:length(surf_info)
+for i=4:4:length(surf_info)
 
-    edge1 = surf(1, :) - surf(2, :);
-    edge2 = surf(4, :) - surf(2, :);
+    edge1 = surf_info(i-3, :) - surf_info(i-2, :);
+    edge2 = surf_info(i, :) - surf_info(i-2, :);
 
     denominator = [edge1; edge2; -direction_vector];
     denominator = det(denominator);
@@ -142,15 +142,15 @@ for i=1:4:length(surf_info)
 
     if denominator > 0
         %xyz_rand = [x_rand, y_rand, z_rand];
-        u = [origin - surf(2, :); edge2; -direction_vector];
+        u = [origin - surf_info(i-2, :); edge2; -direction_vector];
         u = det(u) / denominator;
 
         if u >= 0 && u <= 1
-            v = [edge1; origin - surf(2, :); -direction_vector];
+            v = [edge1; origin - surf_info(i-2, :); -direction_vector];
             v = det(v) / denominator;
 
             if v >= 0 && u + v <= 1
-                t = [edge1; edge2; origin - surf(2, :)];
+                t = [edge1; edge2; origin - surf_info(i-2, :)];
                 t = det(t) / denominator;
                 isOK = 1;
                 p = origin + direction_vector*t;
@@ -161,23 +161,23 @@ for i=1:4:length(surf_info)
 
     end    
 
-    edge1 = surf(4, :) - surf(3, :);
-    edge2 = surf(1, :) - surf(3, :);
+    edge1 = surf_info(i, :) - surf_info(i-1, :);
+    edge2 = surf_info(i-3, :) - surf_info(i-1, :);
 
     denominator = [edge1; edge2; -direction_vector];
     denominator = det(denominator);
 
     if denominator > 0
         %xyz_rand = [x_rand, y_rand, z_rand];
-        u = [origin - surf(3, :); edge2; -direction_vector];
+        u = [origin - surf_info(i-1, :); edge2; -direction_vector];
         u = det(u) / denominator;
 
         if u >= 0 && u <= 1
-            v = [edge1; origin - surf(3, :); -direction_vector];
+            v = [edge1; origin - surf_info(i-1, :); -direction_vector];
             v = det(v) / denominator;
 
             if v >= 0 && u + v <= 1
-                t = [edge1; edge2; origin - surf(3, :)];
+                t = [edge1; edge2; origin - surf_info(i-1, :)];
                 t = det(t) / denominator;
                 isOK = 1;
                 p = origin + direction_vector*t;

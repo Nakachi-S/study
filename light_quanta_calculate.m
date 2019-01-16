@@ -34,7 +34,7 @@ reached_q = 0;
 
 %球の乱数を生成
 tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
-all_quanta = 100;  %１日に放射する総光子数
+all_quanta = 500;  %１日に放射する総光子数
 for n = 1:61
     n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入
     rng(n,'twister')    %ここ注意。nを固定するとだめ。
