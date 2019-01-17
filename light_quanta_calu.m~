@@ -9,7 +9,7 @@ load('sun_info.mat');
 %surf1 = [surf1_x, surf1_y, surf1_z];
 %surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。
 
-%figure(1);
+%figure(2);
 [sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
 %plot3(sun_x, sun_y, sun_z, "o")
 %hold on;
@@ -17,10 +17,12 @@ load('sun_info.mat');
 
 %到達した光子数の数。この数が最大化するような推定を行う。(出力)
 reached_q = 0;
-
-n_q= time_quanta_v2(solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入（new版）
-assignin('base', 'n_q', n_q)   %確かめ用
 %球の乱数を生成
+%tmp_rand = 50;  %乱数を生成する数。後々、日射量に比例して設定するので、一時的なやつ
+%all_quanta = 500;  %１日に放射する総光子数
+count = 0;
+n_q= time_quanta_v2(solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入（new版）
+%assignin('base', 'n_q', n_q)   %確かめ用
 for n = 1:61
     %n_q = time_quanta(n, solorradiation, all_quanta);   %n_qに時間別に発生させる光子数を代入（old版）
     rng(n,'twister')    %ここ注意。nを固定するとだめ。

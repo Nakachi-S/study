@@ -43,7 +43,7 @@ Tree = mpm(Tree, all_quanta);
 %   Metropolis Procedural Modeling
 %   入力は初期化されたTree、出力は最適化されたTree
 function Tree = mpm(Tree, all_quanta)
-N = 100;     %最適化回数
+N = 500;     %最適化回数
 count = 0;  %reached_quantaのためのインデックス
 for i = 1:N
     tmp = diffusion_or_jump;
@@ -71,6 +71,7 @@ for i = 1:N
                 Tree.param(t) = param;
                 count = count+1;
                 reached_quanta(count) = next_quanta;
+                disp(i+"回目は採択されました:next_quanta="+next_quanta);
             case 'jump'
                 Tree.str = copy_tree.str;
                 Tree.param = copy_tree.param;
@@ -148,7 +149,7 @@ end
 %   tとparamに対しての採択確率を返す関数(diffusion用)
 %   尤度関数
 function [accept_pro, now_quanta, next_quanta] = likehood_diffusion(Tree, param, t, all_quanta)
-sigma = 50;
+sigma = 50; %分散　*重要
 
 now_quanta = light_quanta_calu(Tree.surface, all_quanta);   %比較前の状態で光子数の計算
 Tree.param(t) = param;
@@ -160,7 +161,7 @@ next_likehood = exp(-(all_quanta - next_quanta)^2 / (2*sigma^2));
 %disp(now_likehood)
 %disp(next_likehood)
 accept_tmp = (next_likehood / now_likehood);
-disp(accept_tmp);
+disp("尤度比:"+accept_tmp);
 if 1 < accept_tmp
     accept_pro = 1;
 else
@@ -261,7 +262,10 @@ axiom = 'X';
 %number of repititions
 nReps = N;
 
-
+%乱数シードで木の形状や面の数を制御
+rng(1);    %面7つ
+%rng(2);    %面4つ
+%rng(3);     %面10つ
 for i=1:nReps
     %len = len*ratio;
     
@@ -273,7 +277,6 @@ for i=1:nReps
     if length(hit) >= 1
         for k = hit
             l = rand;   
-            %l = 0.8;   %ここを固定にすると、毎回同じ分岐をした木が形成される。
             
             if (l < i/nReps) && (length(axiomINcells)>1)
                 axiomINcells{k} = rule(2).after;
@@ -372,8 +375,10 @@ for i = 1:length(Tree.str)
             
         case 'Z'
             %3×4行の葉である面の情報を付加
-            Tree.surface = [Tree.surface; xT-0.1 yT zT; xT+0.1 yT zT;...
-                xT-0.1 yT+0.1 zT+0.1; xT+0.1 yT+0.1 zT+0.1];
+            %Tree.surface = [Tree.surface; xT yT-0.1 zT; xT yT+0.1 zT;...
+            %    xT+0.1 yT-0.1 zT+0.1; xT+0.1 yT+0.1 zT+0.1];
+            Tree.surface = [Tree.surface; xT yT-0.1 zT; xT+0.1 yT-0.1 zT+0.1;...
+                xT yT+0.1 zT; xT+0.1 yT+0.1 zT+0.1];
         otherwise
             disp("error");
             return
@@ -418,6 +423,14 @@ zlabel("z");
 %xlim([-1 1.2]);
 %ylim([-1 1.2]);
 %zlim([0 1.2]);
+
+%太陽の描画　なくても大丈夫
+load('sun_info.mat');
+[sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
+%plot3(sun_x, sun_y, sun_z, "o")
+%hold on;
+
+box on
 hold off
 end
 %{
