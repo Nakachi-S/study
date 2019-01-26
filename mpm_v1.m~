@@ -43,8 +43,10 @@ Tree = mpm(Tree, all_quanta);
 %   Metropolis Procedural Modeling
 %   入力は初期化されたTree、出力は最適化されたTree
 function Tree = mpm(Tree, all_quanta)
-N = 100;     %最適化回数
+N = 500;     %最適化回数
 count = 0;  %reached_quantaのためのインデックス
+rootname = 'file';
+extension = '.g
 for i = 1:N
     tmp = diffusion_or_jump;
     %all_quanta = [];
@@ -161,7 +163,7 @@ next_likehood = exp(-(all_quanta - next_quanta)^2 / (2*sigma^2));
 %disp(now_likehood)
 %disp(next_likehood)
 accept_tmp = (next_likehood / now_likehood);
-disp("尤度比:"accept_tmp);
+disp("尤度比:"+accept_tmp);
 if 1 < accept_tmp
     accept_pro = 1;
 else

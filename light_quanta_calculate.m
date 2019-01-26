@@ -8,7 +8,7 @@ figure;
 surf1_x = [0, 0; 2, 2];
 surf1_y = [0, 5; 0, 5];
 surf1_z = [0.5, 0.5; 0, 0];
-surf(surf1_x, surf1_y, surf1_z)
+%surf(surf1_x, surf1_y, surf1_z)
 
 surf1 = [surf1_x, surf1_y, surf1_z];
 surf1 = reshape(surf1, [4,3]);  %こいつが最終的な葉の情報。4点の情報。これを使い、遮光チェック。

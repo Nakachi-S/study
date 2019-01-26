@@ -78,7 +78,7 @@ for i = 1:N
         end
     end
     Tree = add_info(Tree);  %パラメータを更新したので、プロット情報や面の情報も更新
-    treePlot(Tree); 
+    treePlot(Tree, i); 
 end
 save('reached_quanta.mat', 'reached_quanta');
 end
@@ -389,7 +389,7 @@ end
 
 %   Treeの内容をプロットする関数
 %   add_infoで更新されたあとに実行すること
-function treePlot(Tree)
+function treePlot(Tree, i_no)
 %   Tの内容を描画
 %disp("Tの長さ"+length(Tree.T))
 %assignin('base', 'Tree.T', Tree.T)
@@ -416,7 +416,6 @@ for i = 4:4:length(Tree.surface)
     surf(surf_x, surf_y, surf_z);
     hold on;
 end
-
 xlabel("x");
 ylabel("y");
 zlabel("z");
@@ -432,6 +431,8 @@ load('sun_info.mat');
 
 box on
 hold off
+%filename = strcat('/Users/nakachisoushi/workspace/study/mtm_fig/','file', num2str(i_no));
+%saveas( gcf, filename, 'jpg'); 
 end
 %{
 %   Treeの内容をプロットする関数
