@@ -24,7 +24,7 @@ hold on;
 [sun_x, sun_y, sun_z] = sph2cart(deg2rad(sunposition.Azimuth),deg2rad(sunposition.Elevation),10.0);
 plot3(sun_x, sun_y, sun_z, "o")
 xlabel("x (east or west)")
-ylabel("y (north or south)")
+ylabel("y (south)")
 zlabel("z (height)")
 grid on;
 hold on;
@@ -63,7 +63,7 @@ for n = 1:61
                     
         if isOK == 1
             reached_q = reached_q + 1;
-            plot3(p(1), p(2), p(3), "o");
+            %plot3(p(1), p(2), p(3), "o");
             hold on
             
         end
@@ -72,11 +72,11 @@ for n = 1:61
     
     %乱数で生成した点の直線の描画
     
-    line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
+    %line_rand(x_rand, y_rand, z_rand, direction_vector);  %ここをコメントしたら一応軽くなる。
 end
 dim = [0.2 0.5 0.3 0.3];
 str = {'交差数=', reached_q};
-annotation('textbox',dim,'String',str,'FitBoxToText','on');
+%annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 %%%%%%%%%%%%%%%%    以下関数　　　%%%%%%%%%%%%%%%%%%
 

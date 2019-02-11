@@ -3,8 +3,8 @@
     一時的なスクリプト。のちのち、全て関数化。
     
 %}
-M = 3;     %max_depth
-m_lam = 0.5;    %枝のパラーメタの平均
+M = 4;     %3か4を。max_depth こいつとini関数の中のrng(n)のnの値で面の数が決まる。
+m_lam = 1.0;    %枝のパラーメタの平均
 s_lam = 0.2;    %   、、　　　　分散
 m_ab = pi/6;
 s_ab = pi/18;
@@ -43,10 +43,9 @@ Tree = mpm(Tree, all_quanta);
 %   Metropolis Procedural Modeling
 %   入力は初期化されたTree、出力は最適化されたTree
 function Tree = mpm(Tree, all_quanta)
-N = 500;     %最適化回数
+N = 1000;     %最適化回数
 count = 0;  %reached_quantaのためのインデックス
-rootname = 'file';
-extension = '.g
+max_quanta = 0; %最も尤度（受光量）が高い時のパラメータを保存するためのもの
 for i = 1:N
     tmp = diffusion_or_jump;
     %all_quanta = [];
@@ -71,18 +70,23 @@ for i = 1:N
             case 'diffusion'
                 %パラメータの更新
                 Tree.param(t) = param;
-                count = count+1;
+                count = count+1;    %reached_quantaのインデックス用
                 reached_quanta(count) = next_quanta;
                 disp(i+"回目は採択されました:next_quanta="+next_quanta);
+                if max_quanta < next_quanta
+                    max_param = Tree.param;
+                    max_quanta = next_quanta;
+                end
             case 'jump'
                 Tree.str = copy_tree.str;
                 Tree.param = copy_tree.param;
         end
     end
     Tree = add_info(Tree);  %パラメータを更新したので、プロット情報や面の情報も更新
-    treePlot(Tree); 
+    %treePlot(Tree, i);     %最適化された木の描画。
 end
 save('reached_quanta.mat', 'reached_quanta');
+save('max_param.mat', 'max_param')
 end
 
 %   difussionかjumpの文字列を返す関数
@@ -265,9 +269,10 @@ axiom = 'X';
 nReps = N;
 
 %乱数シードで木の形状や面の数を制御
-rng(1);    %面7つ
+%rng(1);    %面7つ
 %rng(2);    %面4つ
 %rng(3);     %面10つ
+rng(5);     %面13つ　ただしN=4の場合
 for i=1:nReps
     %len = len*ratio;
     
@@ -300,7 +305,7 @@ for i=1:nReps
 end
 
 Tree.str = axiom;   %初期文字列のセット
-
+%disp(Tree.str)
 %   パラメータの初期値を設定
 for i = 1:length(Tree.str)
     switch Tree.str(i)
@@ -332,13 +337,13 @@ end
 
 %   パラメータに対して、葉の情報とプロットに必要な情報を付加する関数
 function Tree = add_info(Tree)
-v = [0 0 0];
-depth = 1;
+depth = 1;          %木の深さ
 stkIndex = 1;
-T = [0, 0, 0];
-Tree.surface = [];
+T = [0, 0, 0];      %木のトポロジー保存用
+Tree.surface = [];  %葉の面座標
 azimuth = pi/2; elevation = pi/2;
 xT = 0; yT = 0; zT =0;
+x_z_length = 0.4 / sqrt(2);     %xとzの動く距離。一辺が0.4の場合。直角二等辺三角形の比だよ！
 for i = 1:length(Tree.str)
     switch Tree.str(i)
         case 'F'
@@ -379,8 +384,10 @@ for i = 1:length(Tree.str)
             %3×4行の葉である面の情報を付加
             %Tree.surface = [Tree.surface; xT yT-0.1 zT; xT yT+0.1 zT;...
             %    xT+0.1 yT-0.1 zT+0.1; xT+0.1 yT+0.1 zT+0.1];
-            Tree.surface = [Tree.surface; xT yT-0.1 zT; xT+0.1 yT-0.1 zT+0.1;...
-                xT yT+0.1 zT; xT+0.1 yT+0.1 zT+0.1];
+            %Tree.surface = [Tree.surface; xT yT-0.1 zT; xT+0.1 yT-0.1 zT+0.1;...
+                %xT yT+0.1 zT; xT+0.1 yT+0.1 zT+0.1];
+            Tree.surface = [Tree.surface; xT yT-0.2 zT; xT+x_z_length yT-0.2 zT+x_z_length;...
+                xT yT+0.2 zT; xT+x_z_length yT+0.2 zT+x_z_length];
         otherwise
             disp("error");
             return
@@ -391,7 +398,7 @@ end
 
 %   Treeの内容をプロットする関数
 %   add_infoで更新されたあとに実行すること
-function treePlot(Tree)
+function treePlot(Tree, i_no)
 %   Tの内容を描画
 %disp("Tの長さ"+length(Tree.T))
 %assignin('base', 'Tree.T', Tree.T)
@@ -415,16 +422,15 @@ for i = 4:4:length(Tree.surface)
         Tree.surface(i-1, 2) Tree.surface(i, 2)];
     surf_z = [Tree.surface(i-3, 3) Tree.surface(i-2, 3);...
         Tree.surface(i-1, 3) Tree.surface(i, 3)];
-    surf(surf_x, surf_y, surf_z);
+    surf(surf_x, surf_y, surf_z, 'FaceColor', [0.4, 0.4, 0.4]);
     hold on;
 end
-
 xlabel("x");
 ylabel("y");
 zlabel("z");
-%xlim([-1 1.2]);
-%ylim([-1 1.2]);
-%zlim([0 1.2]);
+%xlim([-1 3]);
+%ylim([-1 3]);
+%zlim([-1 3]);
 
 %太陽の描画　なくても大丈夫
 load('sun_info.mat');
@@ -434,6 +440,8 @@ load('sun_info.mat');
 
 box on
 hold off
+%filename = strcat('/Users/nakachisoushi/workspace/study/mtm_fig/','file', num2str(i_no));
+%saveas( gcf, filename, 'jpg'); 
 end
 %{
 %   Treeの内容をプロットする関数
